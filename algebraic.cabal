@@ -8,9 +8,12 @@ synopsis:            General linear algebra structures.
 license:             BSD3
 license-file:        LICENSE
 author:              Wojciech Danilo
-maintainer:          wojciech.danilo@gmail.com
--- copyright:           
-category:            Math
+maintainer:          Wojciech Danilo <wojciech.danilo@gmail.com>
+stability:           experimental
+homepage:            https://github.com/wdanilo/algebraic
+bug-reports:         https://github.com/wdanilo/algebraic/issues
+copyright:           Copyright (C) 2014 Wojciech Danilo
+category:            Math, Algebra
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
