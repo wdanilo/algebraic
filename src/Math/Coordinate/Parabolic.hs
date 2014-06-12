@@ -1,14 +1,23 @@
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Math.Coordinate.Parabolic where
 
 import           Data.Typeable                 (Typeable)
 import           Control.Applicative
+import           Data.Array.Accelerate
+import           Data.Array.Accelerate.Smart
+import           Data.Array.Accelerate.Tuple
+import           Data.Array.Accelerate.Array.Sugar
+import           Data.Complex
+import qualified Data.Foldable as F
 
 import qualified Math.Coordinate.Cartesian as Cartesian
 import           Math.Coordinate.Cartesian    (Cartesian)
@@ -72,3 +81,32 @@ instance Fractional a => Fractional (Point a) where
     {-# INLINE (/) #-}
     fromRational = pure . fromRational
     {-# INLINE fromRational #-}
+
+type instance EltRepr (Point a)  = EltRepr (a, a)
+type instance EltRepr' (Point a) = EltRepr' (a, a)
+
+instance Elt a => Elt (Point a) where
+  eltType _ = eltType (undefined :: (a,a))
+  toElt p = case toElt p of
+     (x, y) -> Point x y
+  fromElt (Point x y) = fromElt (x, y)
+
+  eltType' _ = eltType' (undefined :: (a,a))
+  toElt' p = case toElt' p of
+     (x, y) -> Point x y
+  fromElt' (Point x y) = fromElt' (x, y)
+
+instance IsTuple (Point a) where
+  type TupleRepr (Point a) = TupleRepr (a,a)
+  fromTuple (Point x y) = fromTuple (x,y)
+  toTuple t = case toTuple t of
+     (x, y) -> Point x y
+
+instance (Lift Exp a, Elt (Plain a)) => Lift Exp (Point a) where
+  type Plain (Point a) = Point (Plain a)
+  --lift = Exp . Tuple . F.foldl SnocTup NilTup
+  lift (Point x y) = Exp $ Tuple $ NilTup `SnocTup` lift x `SnocTup` lift y
+
+instance (Elt a, e ~ Exp a) => Unlift Exp (Point e) where
+  unlift t = Point (Exp $ SuccTupIdx ZeroTupIdx `Prj` t)
+                (Exp $ ZeroTupIdx `Prj` t)
