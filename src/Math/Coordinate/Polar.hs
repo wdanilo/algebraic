@@ -3,8 +3,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module Math.Coordinate.Polar where
+
+import           Data.Typeable                 (Typeable)
+import           Control.Applicative
 
 import qualified Math.Coordinate.Cartesian as Cartesian
 import           Math.Coordinate.Cartesian    (Cartesian)
@@ -15,7 +19,7 @@ data Polar      = Polar deriving (Show)
 
 data Point2 a = Point2 { r   :: !a
                        , phi :: !a
-                       } deriving (Show)
+                       } deriving (Eq, Ord, Show, Read, Typeable)
 
 toPolar = convertCoord Polar
 
@@ -30,3 +34,39 @@ instance RealFloat a => CoordConversion ManualConversion Polar space (Cartesian.
     convertCoordBase _ _ _ (Cartesian.Point2 x y) = Point2 r phi
         where r   = sqrt $ (x*x) + (y*y)
               phi = atan2 y x
+
+--------------------------------------------------------------------------------
+-- Point2
+--------------------------------------------------------------------------------
+instance Functor Point2 where
+    fmap f (Point2 a b) = Point2 (f a) (f b)
+
+instance Applicative Point2 where
+    pure a = Point2 a a
+    {-# INLINE pure #-}
+    Point2 a b <*> Point2 d e = Point2 (a d) (b e)
+    {-# INLINE (<*>) #-}
+
+instance Num a => Num (Point2 a) where
+    (+) = liftA2 (+)
+    {-# INLINE (+) #-}
+    (-) = liftA2 (-)
+    {-# INLINE (-) #-}
+    (*) = liftA2 (*)
+    {-# INLINE (*) #-}
+    negate = fmap negate
+    {-# INLINE negate #-}
+    abs = fmap abs
+    {-# INLINE abs #-}
+    signum = fmap signum
+    {-# INLINE signum #-}
+    fromInteger = pure . fromInteger
+    {-# INLINE fromInteger #-}
+
+instance Fractional a => Fractional (Point2 a) where
+    recip = fmap recip
+    {-# INLINE recip #-}
+    (/) = liftA2 (/)
+    {-# INLINE (/) #-}
+    fromRational = pure . fromRational
+    {-# INLINE fromRational #-}

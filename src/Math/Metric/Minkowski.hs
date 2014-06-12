@@ -1,5 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 
 module Math.Metric.Minkowski where
 
@@ -17,5 +18,5 @@ data Minkowski a = Minkowski a deriving Show
 instance MetricCoord (Minkowski a) Cartesian where
     metricCoord _ = Cartesian
 
-instance Floating a => Metric (Minkowski a) (Point2 a) a where
+instance (Floating a, a~b) => Metric (Minkowski b) (Point2 a) a where
     distanceBase (Minkowski p) (Point2 x1 y1) (Point2 x2 y2) = ((abs $ x1-x2)**p + (abs $ y1-y2)**p)**(1/p)

@@ -4,8 +4,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module Math.Coordinate.Coordinate where
+
+import           Data.Typeable                 (Typeable)
 
 import GHC.Exts
 

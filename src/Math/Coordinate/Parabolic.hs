@@ -3,8 +3,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module Math.Coordinate.Parabolic where
+
+import           Data.Typeable                 (Typeable)
+import           Control.Applicative
 
 import qualified Math.Coordinate.Cartesian as Cartesian
 import           Math.Coordinate.Cartesian    (Cartesian)
@@ -15,7 +19,7 @@ data Parabolic = Parabolic deriving (Show)
 
 data Point a = Point { rho :: !a
                      , tau :: !a 
-                     } deriving (Show)
+                     } deriving (Eq, Ord, Show, Read, Typeable)
 
 toParabolic = convertCoord Parabolic
 
@@ -33,3 +37,38 @@ instance Floating a => CoordConversion ManualConversion Parabolic space (Cartesi
     	where rho = sqrt $ y + (sqrt $ x**2 + y**2)
     	      tau = x/rho
 
+--------------------------------------------------------------------------------
+-- Point
+--------------------------------------------------------------------------------
+instance Functor Point where
+    fmap f (Point a b) = Point (f a) (f b)
+
+instance Applicative Point where
+    pure a = Point a a
+    {-# INLINE pure #-}
+    Point a b <*> Point d e = Point (a d) (b e)
+    {-# INLINE (<*>) #-}
+
+instance Num a => Num (Point a) where
+    (+) = liftA2 (+)
+    {-# INLINE (+) #-}
+    (-) = liftA2 (-)
+    {-# INLINE (-) #-}
+    (*) = liftA2 (*)
+    {-# INLINE (*) #-}
+    negate = fmap negate
+    {-# INLINE negate #-}
+    abs = fmap abs
+    {-# INLINE abs #-}
+    signum = fmap signum
+    {-# INLINE signum #-}
+    fromInteger = pure . fromInteger
+    {-# INLINE fromInteger #-}
+
+instance Fractional a => Fractional (Point a) where
+    recip = fmap recip
+    {-# INLINE recip #-}
+    (/) = liftA2 (/)
+    {-# INLINE (/) #-}
+    fromRational = pure . fromRational
+    {-# INLINE fromRational #-}
