@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module Math.Coordinate.Parabolic where
 
@@ -14,7 +15,7 @@ import           Data.Typeable                 (Typeable)
 import           Control.Applicative
 import           Data.Array.Accelerate
 import           Data.Array.Accelerate.Smart
-import           Data.Array.Accelerate.Tuple
+import           Data.Array.Accelerate.Product
 import           Data.Array.Accelerate.Array.Sugar
 import           Data.Complex
 import qualified Data.Foldable as F
@@ -27,7 +28,7 @@ import           Math.Space.Space             (Space2)
 data Parabolic = Parabolic deriving (Show)
 
 data Point a = Point { rho :: !a
-                     , tau :: !a 
+                     , tau :: !a
                      } deriving (Eq, Ord, Show, Read, Typeable)
 
 toParabolic = convertCoord Parabolic
@@ -83,7 +84,6 @@ instance Fractional a => Fractional (Point a) where
     {-# INLINE fromRational #-}
 
 type instance EltRepr (Point a)  = EltRepr (a, a)
-type instance EltRepr' (Point a) = EltRepr' (a, a)
 
 instance Elt a => Elt (Point a) where
   eltType _ = eltType (undefined :: (a,a))
@@ -91,20 +91,15 @@ instance Elt a => Elt (Point a) where
      (x, y) -> Point x y
   fromElt (Point x y) = fromElt (x, y)
 
-  eltType' _ = eltType' (undefined :: (a,a))
-  toElt' p = case toElt' p of
+instance cst a => IsProduct cst (Point a) where
+  type ProdRepr (Point a) = ProdRepr (a,a)
+  fromProd cst (Point x y) = fromProd cst (x,y)
+  toProd cst t = case toProd cst t of
      (x, y) -> Point x y
-  fromElt' (Point x y) = fromElt' (x, y)
-
-instance IsTuple (Point a) where
-  type TupleRepr (Point a) = TupleRepr (a,a)
-  fromTuple (Point x y) = fromTuple (x,y)
-  toTuple t = case toTuple t of
-     (x, y) -> Point x y
+  prod cst _ = prod cst (undefined :: (a,a))
 
 instance (Lift Exp a, Elt (Plain a)) => Lift Exp (Point a) where
   type Plain (Point a) = Point (Plain a)
-  --lift = Exp . Tuple . F.foldl SnocTup NilTup
   lift (Point x y) = Exp $ Tuple $ NilTup `SnocTup` lift x `SnocTup` lift y
 
 instance (Elt a, e ~ Exp a) => Unlift Exp (Point e) where

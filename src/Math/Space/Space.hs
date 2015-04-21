@@ -13,12 +13,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module Math.Space.Space where
 
 import           Data.Array.Accelerate
 import           Data.Array.Accelerate.Smart
-import           Data.Array.Accelerate.Tuple
+import           Data.Array.Accelerate.Product
 import           Data.Array.Accelerate.Array.Sugar
 import           Data.Complex
 import qualified Data.Foldable as F
@@ -78,7 +79,6 @@ instance Fractional a => Fractional (Grid a) where
     {-# INLINE fromRational #-}
 
 type instance EltRepr (Grid a)  = EltRepr (a, a)
-type instance EltRepr' (Grid a) = EltRepr' (a, a)
 
 instance Elt a => Elt (Grid a) where
   eltType _ = eltType (undefined :: (a,a))
@@ -86,20 +86,15 @@ instance Elt a => Elt (Grid a) where
      (x, y) -> Grid x y
   fromElt (Grid x y) = fromElt (x, y)
 
-  eltType' _ = eltType' (undefined :: (a,a))
-  toElt' p = case toElt' p of
+instance cst a => IsProduct cst (Grid a) where
+  type ProdRepr (Grid a) = ProdRepr (a,a)
+  fromProd cst (Grid x y) = fromProd cst (x,y)
+  toProd cst t = case toProd cst t of
      (x, y) -> Grid x y
-  fromElt' (Grid x y) = fromElt' (x, y)
-
-instance IsTuple (Grid a) where
-  type TupleRepr (Grid a) = TupleRepr (a,a)
-  fromTuple (Grid x y) = fromTuple (x,y)
-  toTuple t = case toTuple t of
-     (x, y) -> Grid x y
+  prod cst _ = prod cst (undefined :: (a,a))
 
 instance (Lift Exp a, Elt (Plain a)) => Lift Exp (Grid a) where
   type Plain (Grid a) = Grid (Plain a)
-  --lift = Exp . Tuple . F.foldl SnocTup NilTup
   lift (Grid x y) = Exp $ Tuple $ NilTup `SnocTup` lift x `SnocTup` lift y
 
 instance (Elt a, e ~ Exp a) => Unlift Exp (Grid e) where

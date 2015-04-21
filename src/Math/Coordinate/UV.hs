@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module Math.Coordinate.UV where
 
@@ -14,7 +15,7 @@ import           Data.Typeable                 (Typeable)
 import           Control.Applicative
 import           Data.Array.Accelerate
 import           Data.Array.Accelerate.Smart
-import           Data.Array.Accelerate.Tuple
+import           Data.Array.Accelerate.Product
 import           Data.Array.Accelerate.Array.Sugar
 import           Data.Complex
 import qualified Data.Foldable as F
@@ -107,21 +108,17 @@ instance Fractional a => Fractional (Point1 a) where
     {-# INLINE fromRational #-}
 
 type instance EltRepr (Point1 a) = EltRepr a
-type instance EltRepr' (Point1 a) = EltRepr' a
 
 instance Elt a => Elt (Point1 a) where
   eltType _ = eltType (undefined :: a)
   toElt = Point1 . toElt
   fromElt (Point1 a) = fromElt a
 
-  eltType' _ = eltType' (undefined :: a)
-  toElt' = Point1 . toElt'
-  fromElt' (Point1 a) = fromElt' a
-
-instance IsTuple (Point1 a) where
-  type TupleRepr (Point1 a) = ((), a)
-  fromTuple (Point1 x) = ((), x)
-  toTuple ((), x) = Point1 x
+instance cst a => IsProduct cst (Point1 a) where
+  type ProdRepr (Point1 a) = ((), a)
+  fromProd cst (Point1 x) = ((), x)
+  toProd cst ((), x) = Point1 x
+  prod cst _ = ProdRsnoc ProdRunit
 
 instance (Lift Exp a, Elt (Plain a)) => Lift Exp (Point1 a) where
   type Plain (Point1 a) = Point1 (Plain a)
@@ -167,7 +164,6 @@ instance Fractional a => Fractional (Point2 a) where
     {-# INLINE fromRational #-}
 
 type instance EltRepr (Point2 a)  = EltRepr (a, a)
-type instance EltRepr' (Point2 a) = EltRepr' (a, a)
 
 instance Elt a => Elt (Point2 a) where
   eltType _ = eltType (undefined :: (a,a))
@@ -175,20 +171,15 @@ instance Elt a => Elt (Point2 a) where
      (x, y) -> Point2 x y
   fromElt (Point2 x y) = fromElt (x, y)
 
-  eltType' _ = eltType' (undefined :: (a,a))
-  toElt' p = case toElt' p of
+instance cst a => IsProduct cst (Point2 a) where
+  type ProdRepr (Point2 a) = ProdRepr (a,a)
+  fromProd cst (Point2 x y) = fromProd cst (x,y)
+  toProd cst t = case toProd cst t of
      (x, y) -> Point2 x y
-  fromElt' (Point2 x y) = fromElt' (x, y)
-
-instance IsTuple (Point2 a) where
-  type TupleRepr (Point2 a) = TupleRepr (a,a)
-  fromTuple (Point2 x y) = fromTuple (x,y)
-  toTuple t = case toTuple t of
-     (x, y) -> Point2 x y
+  prod cst _ = prod cst (undefined :: (a,a))
 
 instance (Lift Exp a, Elt (Plain a)) => Lift Exp (Point2 a) where
   type Plain (Point2 a) = Point2 (Plain a)
-  --lift = Exp . Tuple . F.foldl SnocTup NilTup
   lift (Point2 x y) = Exp $ Tuple $ NilTup `SnocTup` lift x `SnocTup` lift y
 
 instance (Elt a, e ~ Exp a) => Unlift Exp (Point2 e) where
@@ -232,7 +223,6 @@ instance Fractional a => Fractional (Point3 a) where
     {-# INLINE fromRational #-}
 
 type instance EltRepr (Point3 a)  = EltRepr (a, a, a)
-type instance EltRepr' (Point3 a) = EltRepr' (a, a, a)
 
 instance Elt a => Elt (Point3 a) where
   eltType _ = eltType (undefined :: (a,a,a))
@@ -240,20 +230,15 @@ instance Elt a => Elt (Point3 a) where
      (x, y, z) -> Point3 x y z
   fromElt (Point3 x y z) = fromElt (x, y, z)
 
-  eltType' _ = eltType' (undefined :: (a,a,a))
-  toElt' p = case toElt' p of
+instance cst a => IsProduct cst (Point3 a) where
+  type ProdRepr (Point3 a) = ProdRepr (a,a,a)
+  fromProd cst (Point3 x y z) = fromProd cst (x,y,z)
+  toProd cst t = case toProd cst t of
      (x, y, z) -> Point3 x y z
-  fromElt' (Point3 x y z) = fromElt' (x, y, z)
-
-instance IsTuple (Point3 a) where
-  type TupleRepr (Point3 a) = TupleRepr (a,a,a)
-  fromTuple (Point3 x y z) = fromTuple (x,y,z)
-  toTuple t = case toTuple t of
-     (x, y, z) -> Point3 x y z
+  prod cst _ = prod cst (undefined :: (a,a,a))
 
 instance (Lift Exp a, Elt (Plain a)) => Lift Exp (Point3 a) where
   type Plain (Point3 a) = Point3 (Plain a)
-  --lift = Exp . Tuple . F.foldl SnocTup NilTup
   lift (Point3 x y z) = Exp $ Tuple $ NilTup `SnocTup` lift x `SnocTup` lift y `SnocTup` lift z
 
 instance (Elt a, e ~ Exp a) => Unlift Exp (Point3 e) where

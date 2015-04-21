@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module Math.Coordinate.BiPolar2Center where
 
@@ -14,7 +15,7 @@ import           Data.Typeable                 (Typeable)
 import           Control.Applicative
 import           Data.Array.Accelerate
 import           Data.Array.Accelerate.Smart
-import           Data.Array.Accelerate.Tuple
+import           Data.Array.Accelerate.Product
 import           Data.Array.Accelerate.Array.Sugar
 import           Data.Complex
 import qualified Data.Foldable as F
@@ -84,7 +85,6 @@ instance Fractional a => Fractional (Point a) where
     {-# INLINE fromRational #-}
 
 type instance EltRepr (Point a)  = EltRepr (a, a, a)
-type instance EltRepr' (Point a) = EltRepr' (a, a, a)
 
 instance Elt a => Elt (Point a) where
   eltType _ = eltType (undefined :: (a,a,a))
@@ -92,20 +92,15 @@ instance Elt a => Elt (Point a) where
      (x, y, z) -> Point x y z
   fromElt (Point x y z) = fromElt (x, y, z)
 
-  eltType' _ = eltType' (undefined :: (a,a,a))
-  toElt' p = case toElt' p of
+instance cst a => IsProduct cst (Point a) where
+  type ProdRepr (Point a) = ProdRepr (a,a,a)
+  fromProd cst (Point x y z) = fromProd cst (x,y,z)
+  toProd cst t = case toProd cst t of
      (x, y, z) -> Point x y z
-  fromElt' (Point x y z) = fromElt' (x, y, z)
-
-instance IsTuple (Point a) where
-  type TupleRepr (Point a) = TupleRepr (a,a,a)
-  fromTuple (Point x y z) = fromTuple (x,y,z)
-  toTuple t = case toTuple t of
-     (x, y, z) -> Point x y z
+  prod cst _ = prod cst (undefined :: (a,a,a))
 
 instance (Lift Exp a, Elt (Plain a)) => Lift Exp (Point a) where
   type Plain (Point a) = Point (Plain a)
-  --lift = Exp . Tuple . F.foldl SnocTup NilTup
   lift (Point x y z) = Exp $ Tuple $ NilTup `SnocTup` lift x `SnocTup` lift y `SnocTup` lift z
 
 instance (Elt a, e ~ Exp a) => Unlift Exp (Point e) where
