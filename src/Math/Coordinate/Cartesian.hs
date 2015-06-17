@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -10,8 +11,7 @@
 
 module Math.Coordinate.Cartesian where
 
-
-
+import           Control.Applicative
 import           Data.Array.Accelerate
 import           Data.Array.Accelerate.Smart
 import           Data.Array.Accelerate.Tuple
@@ -19,18 +19,17 @@ import           Data.Array.Accelerate.Array.Sugar
 import           Data.Complex
 import qualified Data.Foldable as F
 import           Data.Typeable
-
-import Control.Applicative
+import           GHC.Generics (Generic)
 
 import Math.Coordinate.Coordinate (CoordConversion(..), ManualConversion(..), AutoConversion(..), convertCoord)
 import Math.Space.Space           (Space2)
 
 data Cartesian  = Cartesian deriving (Show)
 
-data Point1 a   = Point1 !a deriving (Eq, Ord, Show, Read,Typeable)
-data Point2 a   = Point2 !a !a deriving (Eq, Ord, Show, Read,Typeable)
-data Point3 a   = Point3 !a !a !a deriving (Eq, Ord, Show, Read,Typeable)
-data Point4 a   = Point4 !a !a !a !a deriving (Eq, Ord, Show, Read,Typeable)
+data Point1 a   = Point1 !a deriving (Eq, Ord, Show, Read, Typeable, Generic)
+data Point2 a   = Point2 !a !a deriving (Eq, Ord, Show, Read, Typeable, Generic)
+data Point3 a   = Point3 !a !a !a deriving (Eq, Ord, Show, Read, Typeable, Generic)
+data Point4 a   = Point4 !a !a !a !a deriving (Eq, Ord, Show, Read, Typeable, Generic)
 
 toCartesian = convertCoord Cartesian
 
@@ -73,7 +72,6 @@ instance CartesianCoord1 Point4 where x (Point4 x _ _ _) = x
 instance CartesianCoord2 Point4 where y (Point4 _ y _ _) = y
 instance CartesianCoord3 Point4 where z (Point4 _ _ z _) = z
 instance CartesianCoord4 Point4 where w (Point4 _ _ _ w) = w
-
 
 instance  ( CoordConversion ManualConversion Cartesian space a b
           , CoordConversion ManualConversion sys space b c) => 
